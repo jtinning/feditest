@@ -233,18 +233,18 @@ async fn ch_post(
     extract::State(state): extract::State<Arc<AppState>>,    
     Json(body): Json<ChPost>
 ) -> impl IntoResponse {
-    event!(Level::DEBUG, "Channel post {:?}", body = &body);
+    event!(Level::DEBUG, "Channel post {:?}", &body);
     let newch;
     {   // Mutex guard scope
         let mut ch_list = state.channels.lock().await;
         if ch_list.contains_key(&body.name) {
-            event!(Level::DEBUG, "Channel already exists {}", channel = &body.name);
+            event!(Level::DEBUG, "Channel already exists {}", &body.name);
             return (StatusCode::CONFLICT, "Channel already exists").into_response();
         }
         newch = Arc::new(Channel::new(&body.name));
         ch_list.insert(body.name.clone(), newch.clone());
     }
-    event!(Level::INFO, "Created channel {:?}", body = &body);
+    event!(Level::INFO, "Created channel {:?}", &body);
     if let Some(dom) = body.join {
         fed(state, newch.clone(), &dom, &body.name).await;
     }
@@ -272,14 +272,14 @@ async fn ch_peer_hdl(
     extract::Path(id): extract::Path<String>,
     extract::State(state): extract::State<Arc<AppState>>    
 ) -> impl IntoResponse {
-    event!(Level::DEBUG, "Peer request {}", channel = id);
+    event!(Level::DEBUG, "Peer request {}", &id);
     let ch: Arc<Channel>;
     {
         let chlist = state.channels.lock().await;
         if let Some(inch) = chlist.get(&id) {
             ch = inch.clone();
         } else {
-            event!(Level::DEBUG, "Channel not found in peer request {}", channel = id);
+            event!(Level::DEBUG, "Channel not found in peer request {}", &id);
             return (
                 StatusCode::NOT_FOUND,
                 "Channel not found"
@@ -311,7 +311,7 @@ async fn ch_ws_hdl(
         if let Some(inch) = chlist.get(&id) {
             ch = inch.clone();
         } else {
-            event!(Level::DEBUG, "Channel not found {}", channel = id);
+            event!(Level::DEBUG, "Channel not found {}", &id);
             return (
                 StatusCode::NOT_FOUND,
                 "Channel not found"
